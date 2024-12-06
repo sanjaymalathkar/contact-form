@@ -6,19 +6,9 @@ const dotenv = require('dotenv');
 const path = require('path');
 const WeatherData = require('./public/src/models/WeatherData');
 
-// Load environment variables
-dotenv.config();
-
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-// Middleware
-app.use(cors());
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI, {
+mongoose.connect //ADD YOUR MONGODB URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true
 })
@@ -35,46 +25,6 @@ const contactSchema = new mongoose.Schema({
 
 const Contact = mongoose.model('Contact', contactSchema);
 
-// Weather API Route
-app.get('/api/weather', async (req, res) => {
-    const { location } = req.query;
-
-    try {
-        // Fetch current weather
-        const currentWeatherResponse = await axios.get(`https://api.openweathermap.org/data/2.5/weather?q=${location}&appid=${process.env.OPENWEATHER_API_KEY}&units=metric`);
-        const currentWeather = currentWeatherResponse.data;
-
-        // Fetch forecast
-        const forecastResponse = await axios.get(`https://api.openweathermap.org/data/2.5/forecast?q=${location}&appid=${process.env.OPENWEATHER_API_KEY}&units=metric`);
-        const forecastData = forecastResponse.data.list.filter((f, index) => index % 8 === 0).slice(0, 5);
-
-        // Prepare response
-        const weatherData = {
-            current: {
-                location: currentWeather.name,
-                temperature: currentWeather.main.temp,
-                description: currentWeather.weather[0].description,
-                humidity: currentWeather.main.humidity,
-                windSpeed: currentWeather.wind.speed
-            },
-            forecast: forecastData.map(day => ({
-                date: new Date(day.dt * 1000).toLocaleDateString(),
-                temperature: day.main.temp,
-                description: day.weather[0].description,
-                humidity: day.main.humidity
-            }))
-        };
-
-        // Save to MongoDB
-        const weatherDoc = new WeatherData(weatherData);
-        await weatherDoc.save();
-
-        res.json(weatherData);
-    } catch (error) {
-        console.error('Weather API Error:', error);
-        res.status(500).json({ error: 'Weather data fetch failed' });
-    }
-});
 
 // Contact Form POST Route
 app.post('/submit-contact', async (req, res) => {
@@ -103,15 +53,6 @@ app.post('/submit-contact', async (req, res) => {
     }
 });
 
-// About Page Route
-app.get('/about', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/about.html')); // Serve the "About" page
-});
-
-// Home Page Route
-app.get('/index', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/index.html')); // Serve the "Home" page
-});
 
 // Contact Page Route
 app.get('/contact', (req, res) => {
